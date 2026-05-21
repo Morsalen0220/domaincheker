@@ -1,20 +1,143 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Domain Expiry & Availability Monitor 🌐
 
-# Run and deploy your AI Studio app
+**Domain Expiry & Availability Monitor** হলো একটি সম্পূর্ণ ফুল-স্ট্যাক (Full-Stack) ডোমেন খোঁজা ও মেয়াদ উত্তীর্ণের তদারকি করার প্ল্যাটফর্ম। এটি React, Express, Node.js এবং TypeScript-এর সমন্বয়ে গঠিত এবং এখানে রয়েছে কড়া সিকিউরিটি গেটওয়ে, Supabase ক্লাউড ডাটাবেজ সিঙ্ক, Gemini ৩.৫ ফ্ল্যাশ সম্পন্ন AI ব্র্যান্ডিং ইঞ্জিন, এবং রিয়েল-টাইম টেলিগ্রাম নোটিফিকেশন অ্যালার্ট সিস্টেম।
 
-This contains everything you need to run your app locally.
+---
 
-View your app in AI Studio: https://ai.studio/apps/16fd210b-7fd6-4889-ac05-6acd1e20cad1
+## সূচিপত্র (Table of Contents)
+1. [এটি কিভাবে কাজ করে? (How it Works)](#১-এটি-কিভাবে-কাজ-করে-how-it-works)
+2. [মূল ফিচারসমূহ এবং ব্যবহারবিধি (Key Features)](#২-মূল-ফিচারসমূহ-এবং-ব্যবহারবিধি-key-features)
+3. [প্রযুক্তিসমূহ (Tech Stack Used)](#৩-প্রযুক্তিসমূহ-tech-stack-used)
+4. [লোকাল এনভায়রনমেন্ট সেটআপ (Local Setup)](#৪-লোকাল-এনভায়রনমেন্ট-সেটআপ-local-setup)
+5. [ডাটাবেজ টেবিল স্কিমা (Supabase Database Schema)](#৫-ডাটাবেজ-টেবিল-স্কিমা-supabase-database-schema)
 
-## Run Locally
+---
 
-**Prerequisites:**  Node.js
+## ১. এটি কিভাবে কাজ করে? (How it Works)
 
+এই অ্যাপ্লিকেশনটির আর্কিটেকচার মূলত একটি **ক্লায়েন্ট-সার্ভার মডেল (Client-Server Architecture)**-এর উপর ভিত্তি করে তৈরি।
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### ক. ব্যাকএন্ড ডোমেন প্রসেসিং ইঞ্জিন
+সাধারণ WHOIS প্রোটোকলগুলো টেক্সট-ভিত্তিক এবং অস্থির হওয়ার কারণে এই অ্যাপ্লিকেশনটি আধুনিক **RDAP (Registration Data Access Protocol)** ব্যবহার করে।
+* যখন আপনি কোনো ডোমেইন অনুসন্ধান করেন, ব্যাকএন্ড এক্সপ্রেস (`server.ts`) একই সাথে দুটি কাজ শুরু করে:
+  1. **DNS Lookup:** নোড জেএসের নেটিভ `dns` লাইব্রেরি ব্যবহার করে ডোমেনটির IP Address (A Record) এবং Name Servers (NS Records) খোঁজ করে।
+  2. **RDAP Query:** ডোমেনটির বর্তমান রেজিস্ট্রেশনের বিশদ তথ্য সরাসরি JSON ফরম্যাটে পেতে একটি সুরক্ষিত এবং দ্রুতগতির রিকুয়েস্ট পাঠানো হয় (উদা: https://rdap.org-এর মাধ্যমে redirections হ্যান্ডেল করা হয়)।
+* ডেব ক্রোনলজি ও মেয়াদ উত্তীর্ণের দিনগুলো নিখুঁতভাবে হিসাব করে রিডিম্পশন (Redemption) বা ডিলিট হওয়ার সম্ভাব্য দিন ও ডোমেইনটি ব্যবহারের উপযোগী কিনা তা ব্যাকএন্ড সার্ভিস ক্লায়েন্টকে সরাসরি জানিয়ে দেয়।
+
+### খ. ক্লাউড সিঙ্ক এবং ব্রাউজার ক্লায়েন্ট ইন্টারঅ্যাকশন
+* ব্যবহারকারীর নজরতালিকা (Watchlist) ব্রাউজারের স্থানীয় মেমরি (`localStorage`)-তে সংরক্ষিত থাকে যাতে ব্যবহারকারীর কোনো ডেটা রিলোড বা বন্ধ করার পর হারিয়ে না যায়।
+* যদি `Supabase` সক্রিয় থাকে, তবে ব্রাউজার পেজ ওপেন হওয়ার সাথে সাথে অফলাইনে সংরক্ষিত সমস্ত ডোমেন এবং ক্লাউড ডাটাবেজ রিলেশন একত্রিত (Smart Sync & Merge) করে নেয় এবং দ্বিমুখী ট্র্যাকিং নিশ্চিত করে।
+
+### গ. কৃত্রিম বুদ্ধিমত্তা ও স্বয়ংক্রিয় অ্যালার্ট ইঞ্জিন
+* **Gemini 3.5 Flash** এর মাধ্যমে ব্যবহারকারী যেকোনো ডোমেইনের গুণগত মান, ব্র্যান্ডিং স্কোর এবং বিকল্প আকর্ষণীয় ডোমেইনের সাজেশন পান।
+* **Telegram APIs Integration** ব্যাকএন্ডের সিকিউর এন্ডপয়েন্টের মাধ্যমে ইনস্ট্যান্ট টেলিগ্রাম অ্যালার্ট ট্রিগার করে থাকে।
+
+---
+
+## ২. মূল ফিচারসমূহ এবং ব্যবহারবিধি (Key Features)
+
+### ১. একক ডোমেন অনুসন্ধান (Single Domain Lookup)
+* **কাজ করার পদ্ধতি:** অনুসন্ধান বক্সে যেকোনো ডোমেন নেম (যেমন: `myblog.com`, `portfolio.io`) লিখে এন্টার চাপলে বা 'Analyze Domain' বাটনে ক্লিক করলে সিস্টেম সম্পূর্ণ লাইভ ডেটা জেনারেট করে।
+* **আউটপুট:** 
+  * রেজিস্ট্রারের নাম (Registrar Name), ডোমেন নিবন্ধনের তারিখ (Registration Date), এবং মেয়াদের শেষ তারিখ (Expiration Date)।
+  * ডোমেইনটি সম্পূর্ণ নতুন বা ক্রয়ের জন্য খালি আছে কি না।
+  * মেয়াদ শেষ হতে বাকি দিনগুলোর নিখুঁত লাইভ কাউন্টডাউন।
+  * ডিলিট হওয়ার সম্ভাবনা (Deletability status/Redemption)।
+  * লাইভ Name Servers এবং IP Host জিপিজি রেকর্ডস।
+
+### ২. এআই ব্র্যান্ডিং পরামর্শদাতা (Gemini AI Brand Advisor)
+* **কাজ করার পদ্ধতি:** ডোমেনের তথ্য অনুসন্ধান করার পর নীচে **AI Brand Diagnostics** সেকশনটি চালু হয়। এতে Google Gemini 3.5 Flash ব্যবহার করা হয়।
+* **ডোমেন খালি থাকলে:** AI ডোমেনটির একটি **ব্র্যান্ডাবিলিটি স্কোর (Brandability Score out of 10)** নির্ধারণ করে, এর এসইও (SEO) কার্যকারিতা বিশ্লেষণ করে এবং এই নামের উপযোগী ব্যবসার কুলুঙ্গি (Business Niches) ও ৫টি শক্তিশালী বিকল্প সাজেশন দেয়।
+* **ডোমেন ইতিমধ্যে নিবন্ধিত থাকলে:** AI ঐ ডোমেনটির সাথে সাদৃশ্যপূর্ণ ৮টি দারুন ও প্রিমিয়াম সমমানের ব্র্যান্ডের নাম ও ডট-কম, ডট-এআই বা ডট-আইও অল্টারনেটিভ এক্সটেনশনের আইডিয়া প্রদান করে।
+
+### ৩. বাল্ক ডেনারস্ক্যানার ও সিএসভি ফাইল আপলোড (Bulk Scanner & CSV/Text Upload)
+* **কাজ করার পদ্ধতি:** "Bulk Scanner (Upload)" ট্যাবে গিয়ে আপনি একসাথে অনেক ডোমেন কপি-পেস্ট করে চেক করতে পারবেন অথবা সরাসরি আপনার ডিভাইসের `.csv` বা `.txt` ফাইল ড্র্যাগ অ্যান্ড ড্রপ করে আপলোড করতে পারেন।
+* **গতি ও দক্ষতা:** ব্যাকএন্ড সার্ভারে এটি **Concurrency worker pool (৫টি সমান্তরাল থ্রেড)** বাস্তবায়ন করে, যার ফলে অনেকগুলো ডোমেন রিকুয়েস্ট একসাথে কোনো ত্রুটি বা ওভারলোড ছাড়াই দ্রুততম সময়ে স্ক্যান করা যায়।
+
+### ৪. ডোমেন নজরতালিকা ও সর্তকতা ম্যানেজার (Domain Watchlist & Tracker)
+* **কাজ করার পদ্ধতি:** যেকোনো ডোমেন সার্চ করার পর সরাসরি প্লাস `(+)` বাটন অথবা তালিকা থেকে নজরতালিকায় ডোমেনটি ট্র্যাকিংয়ে যুক্ত করতে পারবেন।
+* **তাত্ক্ষণিক গুরুত্ব ইন্ডিকেটর:**
+  * ⚠️ **Expiring Soon:** ডোমেনের মেয়াদ যদি ৩০ বা তার কম দিন থাকে তবে হলুদ রঙের সতর্ক সংকেত বা ট্যাগ দেখাবে।
+  * 🛑 **Pending Delete:** ডোমেনটি যদি বর্তমানে রিডিম্পশন গ্রেস পিরিয়ড বা ডিলিট প্রক্রিয়ার মধ্যে থাকে তবে লাল রঙের সতর্কতা সংকেত দেবে।
+* এখানে আপনি ডোমেন প্রতি নিজের কাস্টম নোট (Notes) লিখে সংরক্ষণ করে রাখতে পারবেন।
+
+### ৫. টেলিগ্রাম অ্যালার্ট সংযোগ (Telegram Expiry Alert Configurator)
+* **কাজ করার পদ্ধতি:** "Telegram Settings" ট্যাবে গিয়ে আপনার ব্যক্তিগত বা চ্যানেলের টেলিগ্রাম বট টোকেন (Bot Token) এবং চ্যাট আইডি (Chat ID) প্রদান করুন।
+* **টেস্ট ট্রিগার:** 'Test Alert Channel' বাটনে ক্লিক করলে অ্যাপটি ব্যাকএন্ড এপিআই-এর মাধ্যমে আপনার ফোনে সরাসরি একটি ইন্টারেক্টিভ ও ডেমো টেস্ট মেসেজ পাঠাবে, যার মাধ্যমে মেয়াদের তাৎক্ষণিক অ্যালার্ট বার্তা পাওয়া নিশ্চিত করে।
+
+### ৬. ক্লাউড ডাটাবেজ সিঙ্ক (Supabase Cloud Database Sync)
+* **কাজ করার পদ্ধতি:** আপনার সুপাবেস ডাটাবেজের ইউআরএল এবং আনন কি এনভায়রনমেন্টে থাকলে এটি স্বয়ংক্রিয়ভাবে অনলাইন হয়ে যায়। অ্যাপ্লিকেশন ওপেন হলে অফলাইনের সমস্ত স্থানীয় ডেটা সুন্দরভাবে ক্লাউড ডাটাবেজের সাথে সিঙ্ক এবং ব্যাকআপ হয়ে যায়।
+
+---
+
+## ৩. প্রযুক্তিসমূহ (Tech Stack Used)
+
+* **Frontend:** React 18, TypeScript, Tailwind CSS (ফর রেসপন্সিভ এবং ফ্লুইড ইউজার ইন্টারফেস), Lucide React Icons, এবং Framer Motion বা এন্টার অ্যানিমেশন।
+* **Backend:** Express, Node.js (`dns` নেটিভ মডিউল এবং আধুনিক `RDAP` প্রোটোকল ম্যানেজার)।
+* **AI Engine:** Google GenAI / Gemini 3.5 Flash SDK।
+* **Database Client:** Supabase (PostgreSQL) ক্লাউড ক্লায়েন্ট।
+* **Hosting Support:** Vercel serverless functions এবং Cloud Run এনভায়রনমেন্ট সামঞ্জস্যপূর্ণ।
+
+---
+
+## ৪. লোকাল এনভায়রনমেন্ট সেটআপ (Local Setup)
+
+লোকাল পিসিতে প্রজেক্টটি ক্লোন বা রান করতে নিচের ধাপগুলো অনুসরণ করুন:
+
+### ১. ডিপেন্ডেন্সি ইনস্টল করা
+টার্মিনালে প্রজেক্ট ডিরেক্টরিতে যান এবং রান করুন:
+```bash
+npm install
+```
+
+### ২. এনভায়রনমেন্ট কনফিগারেশন
+প্রজেক্টের রুট ডিরেক্টরিতে একটি `.env` ফাইল তৈরি করুন ( অথবা `.env.example` পেস্ট করুন) এবং আপনার এপিআই কি-সমূহ যুক্ত করুন:
+
+```env
+# Google Gemini API Key - AI ব্র্যান্ডিং জেনারেটরের জন্য (সার্ভার সাইড সিক্রেট)
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Supabase Credentials (ঐচ্ছিক - ক্লাউড ডেটা ব্যাকআপ ও রিয়েলটাইম সিঙ্কের জন্য)
+SUPABASE_URL=https://your_project.supabase.co
+SUPABASE_ANON_KEY=your_anon_public_key_here
+```
+
+### ৩. ডেভেলপমেন্ট সার্ভার চালু করা
+লোকাল সার্ভার (Port 3000) বুট করতে ব্যবহার করুন:
+```bash
+npm run dev
+```
+সার্ভার চালু হলে ব্রাউজারে `http://localhost:3000` এ প্রবেশ করুন।
+
+### ৪. প্রডাকশন বিল্ড তৈরি
+প্রজেক্টটি প্রডাকশন বা ডেপ্লয়মেন্টে বিল্ড করতে নিচের কমান্ডটি রান করুন:
+```bash
+npm run build
+```
+
+---
+
+## ৫. ডাটাবেজ টেবিল স্কিমা (Supabase Database Schema)
+
+যদি আপনি Supabase ব্যবহার করতে চান, তবে আপনার সুপাবেস ড্যাশবোর্ডের SQL Editor-এ গিয়ে নিচের কোডটি রান করে টেবিলটি তৈরি করে নিন:
+
+```sql
+create table public.domain_watchlist (
+  id bigint generated by default as identity primary key,
+  domain text not null unique,
+  expiry_date timestamptz,
+  registrar text,
+  expiry_days_remaining integer,
+  is_expiring_soon boolean default false,
+  is_pending_delete boolean default false,
+  last_checked_at timestamptz default timezone('utc'::text, now()),
+  notes text default ''::text,
+  created_at timestamptz default timezone('utc'::text, now())
+);
+
+-- Enable RLS (Row Level Security) if you have authentication enabled 
+-- or write appropriate public read/write permission rules as needed.
+```
+
+---
+*এই অ্যাপ্লিকেশনটি ডোমেইনের সঠিক তথ্য প্রদান ও বিশ্বস্ততার সাথে নিয়মিত অ্যালার্ট পরিবেশনের জন্য নিখুঁতভাবে তৈরি করা হয়েছে।*
