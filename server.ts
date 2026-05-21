@@ -12,13 +12,15 @@ const PORT = 3000;
 
 app.use(express.json({ limit: '10mb' }));
 
-// Supabase Configuration fallbacks
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ypfvkzcawyypedjmhsom.supabase.co';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_dKWt8s39J1epX3CAqBGKmA_IoqghjWH';
+// Supabase Configuration - only initialized if environment keys are supplied and valid
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 
 let supabaseClient: any = null;
+const isSupabaseConfigured = !!(SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_ANON_KEY.startsWith('sb_publishable_'));
+
 try {
-  if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+  if (isSupabaseConfigured) {
     supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: {
         persistSession: false,
@@ -215,8 +217,8 @@ async function lookupDomain(rawDomain: string) {
 app.get('/api/supabase/config', (req, res) => {
   res.json({
     enabled: !!supabaseClient,
-    url: SUPABASE_URL,
-    keyMasked: SUPABASE_ANON_KEY ? `${SUPABASE_ANON_KEY.substring(0, 8)}...${SUPABASE_ANON_KEY.substring(SUPABASE_ANON_KEY.length - 8)}` : 'None'
+    url: SUPABASE_URL || 'Not Configured',
+    keyMasked: SUPABASE_ANON_KEY && SUPABASE_ANON_KEY.length > 8 ? `${SUPABASE_ANON_KEY.substring(0, 8)}...${SUPABASE_ANON_KEY.substring(SUPABASE_ANON_KEY.length - 8)}` : 'None'
   });
 });
 
