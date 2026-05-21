@@ -1,0 +1,6 @@
+{
+  "name": "Domain Expiry & Availability Monitor",
+  "description": "A high-performance full-stack Domain Lookup and Bulk Checker with Expiry Monitoring, CSV Upload, Gemini AI Recommendations, and Telegram alert alerts.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
