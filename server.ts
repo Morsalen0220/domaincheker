@@ -1,7 +1,6 @@
 import express from 'express';
 import path from 'path';
 import dns from 'dns';
-import { GoogleGenAI, Type } from '@google/genai';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
 
@@ -31,24 +30,13 @@ try {
   console.error('Supabase Initialization Error:', err);
 }
 
-// Lazy initializer for Gemini
-let aiInstance: GoogleGenAI | null = null;
-function getGemini(): GoogleGenAI {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY is not configured in the Secrets / Environment.');
+// Helper for smart AI branding endpoints using custom API setups
+function getGroqApiKey(): string {
+  const key = process.env.GROQ_API_KEY;
+  if (!key) {
+    throw new Error('GROQ_API_KEY is not configured in the Secrets / Environment panel.');
   }
-  if (!aiInstance) {
-    aiInstance = new GoogleGenAI({
-      apiKey,
-      httpOptions: {
-        headers: {
-          'User-Agent': 'aistudio-build',
-        },
-      },
-    });
-  }
-  return aiInstance;
+  return key;
 }
 
 // Normalize domain names
@@ -375,7 +363,7 @@ app.post('/api/bulk-lookup', async (req, res) => {
   return res.json({ results });
 });
 
-// AI Analyze (Branding feedback, suggested names, registration assistance via Gemini 3.5 Flash)
+// AI Analyze (Branding feedback, suggested names, registration assistance via Smart Groq Engine)
 app.post('/api/ai-analyze', async (req, res) => {
   const { domain, isAvailable } = req.body;
   if (!domain) {
@@ -383,7 +371,7 @@ app.post('/api/ai-analyze', async (req, res) => {
   }
 
   try {
-    const gemini = getGemini();
+    const apiKey = getGroqApiKey();
     const prompt = isAvailable
       ? `You are an expert domain name analyst and branding consultant.
 The domain "${domain}" is currently AVAILABLE!
@@ -399,14 +387,34 @@ Provide:
 2. Quick branding or phonetic suggestion on why these variations are powerful.
 Keep the format elegant and structured. Under no circumstances should you add any technical log metadata.`;
 
-    const response = await gemini.models.generateContent({
-      model: 'gemini-3.5-flash',
-      contents: prompt,
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'llama3-8b-8192',
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        temperature: 0.7,
+      }),
     });
 
-    return res.json({ suggestion: response.text });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`AI API responded with code ${response.status}: ${errorText}`);
+    }
+
+    const data: any = await response.json();
+    const suggestionContent = data.choices?.[0]?.message?.content || 'No suggestions could be generated.';
+    return res.json({ suggestion: suggestionContent });
   } catch (err: any) {
-    return res.status(500).json({ error: err.message || 'Gemini AI analysis failed' });
+    return res.status(500).json({ error: err.message || 'Smart AI analyst evaluation failed' });
   }
 });
 

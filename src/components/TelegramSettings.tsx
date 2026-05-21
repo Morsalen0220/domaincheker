@@ -179,19 +179,19 @@ export default function TelegramSettings({ config, onSaveConfig, onSendTest }: T
             Telegram Instructions
           </h4>
 
-          {/* Bilingual Benglish Setup Guide */}
+          {/* Telegram Setup Guide */}
           <div className="space-y-3 text-slate-600 leading-normal">
             <div>
-              <p className="text-xs font-bold text-slate-800">1. Bot তৈরি করা (Create Bot)</p>
+              <p className="text-xs font-bold text-slate-800">1. Create Telegram Bot</p>
               <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                Telegram-এ <a href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline font-semibold font-mono">@BotFather</a>-এ যান। <code className="bg-slate-50 px-1 py-0.5 border border-slate-100 rounded text-[10px] text-indigo-600 font-mono">/newbot</code> লিখে command দিন। Bot-এর নাম নির্বাচন করলে আপনাকে একটি <strong>HTTP API Token</strong> দেবে। সেটি উপরে পেস্ট করুন।
+                Search for <a href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline font-semibold font-mono">@BotFather</a> on Telegram. Send the <code className="bg-slate-50 px-1 py-0.5 border border-slate-100 rounded text-[10px] text-indigo-600 font-mono">/newbot</code> command and choose a name and username for your bot. Copy the generated <strong>HTTP API Access Token</strong> and paste it above.
               </p>
             </div>
 
             <div>
-              <p className="text-xs font-bold text-slate-800">2. Chat ID বের করা (Obtain Chat ID)</p>
+              <p className="text-xs font-bold text-slate-800">2. Obtain Chat ID</p>
               <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                Telegram-এ <a href="https://t.me/userinfobot" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline font-semibold font-mono">@userinfobot</a>-এ যান এবং start করুন। এটি আপনাকে আপনার personal <strong>Chat ID</strong> দিবে। ID-টি কপি করে উপরে পেস্ট করুন।
+                Search for <a href="https://t.me/userinfobot" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline font-semibold font-mono">@userinfobot</a> on Telegram and hit start. It will print your personal <strong>Numeric Chat ID</strong>. Copy this code and paste it above.
               </p>
             </div>
 
