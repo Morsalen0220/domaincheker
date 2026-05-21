@@ -446,6 +446,16 @@ Your configuration is active. You will receive alerts here.`;
   }
 });
 
+// Global Error Handler for diagnostic feedback
+app.use((err: any, req: any, res: any, next: any) => {
+  console.error('EXPRESS SERVER ERROR:', err);
+  res.status(500).json({
+    error: 'Internal Server Error detected by Express',
+    message: err.message || String(err),
+    stack: err.stack || null,
+  });
+});
+
 // Start listening or attach Vite Dev environment
 async function start() {
   if (process.env.VERCEL) {
