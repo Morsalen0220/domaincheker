@@ -449,6 +449,12 @@ Your configuration is active. You will receive alerts here.`;
 
 // Start listening or attach Vite Dev environment
 async function start() {
+  if (process.env.VERCEL) {
+    // Under Vercel's serverless runtime, static assets are served instantly by Vercel CDN,
+    // and Express acts clean and light only as an API router handler.
+    return;
+  }
+
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -469,3 +475,5 @@ async function start() {
 }
 
 start();
+
+export default app;
